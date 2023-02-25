@@ -7,7 +7,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 mkdir log
 touch /log/update
-bash backup.sh
+bash Backup.sh
 os="NONE"
 if hostnamectl | grep -q 'Ubuntu'; then
 	echo ubuntu
