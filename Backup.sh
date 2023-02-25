@@ -1,3 +1,4 @@
+#!/bin/bash
 #back up
 
 mkdir /backups
