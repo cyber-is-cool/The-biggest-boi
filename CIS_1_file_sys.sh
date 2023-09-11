@@ -31,10 +31,13 @@ clear
 """
 clear
 #1.2
-
-if [[ $(findmnt -nk /tmp) ]]; then
+if [[ $(findmnt -nk /tmp | grep "1777,strictatime,size=2G,noexec,nodev,nosuid") ]]; then
 	echo "/tmp is mounted"
 else
 	echo "/tmp is not mounted"
-	
+	cp -v /usr/share/systemd/tmp.mount /etc/systemd/system
+	sed -i "/^Options=mode/s/=.*$/=1777,strictatime,size=2G,noexec,nodev,nosuid/" /etc/systemd/system/tmp.mount
+	#systemctl daemon-reload
+	#systemctl --now enable tmp.mount
 fi
+
