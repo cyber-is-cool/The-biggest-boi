@@ -6,7 +6,7 @@ if [[ $(/usr/bin/id -u) -ne 0 ]]; then
 fi
 #1.1
 clear
-
+'''
 /bin/bash CIS_1_file_sys_rem.sh cramfs fs
 read
 clear
@@ -45,8 +45,59 @@ echo "ext4           /var/tmp            ext4   defaults,nosuid,nodev,noexec  0 
 
 echo "ext4           /home            ext4   defaults,nodev  0  0" >> /etc/fstab
 
-df --local -P | awk '{if (NR!=1) print $6}' | xargs -I '{}' find '{}' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null | xargs -I '{}' chmod a+t '{}'
+
 #automounting USB 1.1.9
 apt purge autofs
+read
+clear
 # 1.1.10
 /bin/bash CIS_1_file_sys_rem.sh usb-storage drivers 
+read
+clear
+'''
+#1.2
+apt install aide aide-common -y
+clear
+rm /etc/systemd/system/aidecheck.service &&
+touch /etc/systemd/system/aidecheck.service
+
+echo "[Unit]" >>  /etc/systemd/system/aidecheck.service
+echo "Description=Aide Check" >>  /etc/systemd/system/aidecheck.service
+echo "" >>  /etc/systemd/system/aidecheck.service
+echo "[Service]" >>  /etc/systemd/system/aidecheck.service
+echo "Type=simple" >>  /etc/systemd/system/aidecheck.service
+echo "ExecStart=/usr/bin/aide.wrapper --config /etc/aide/aide.conf --check" >>  /etc/systemd/system/aidecheck.service
+echo "" >>  /etc/systemd/system/aidecheck.service
+echo "[Install]" >>  /etc/systemd/system/aidecheck.service
+echo "WantedBy=multi-user.target" >>  /etc/systemd/system/aidecheck.service
+cat /etc/systemd/system/aidecheck.service
+
+rm /etc/systemd/system/aidecheck.timer &&
+touch /etc/systemd/system/aidecheck.timer
+echo "[Unit]" >>  /etc/systemd/system/aidecheck.timer
+echo "Description=Aide check every day at 5AM" >>  /etc/systemd/system/aidecheck.timer
+echo "" >>  /etc/systemd/system/aidecheck.timer
+echo "[Timer]" >>  /etc/systemd/system/aidecheck.timer
+echo "OnCalendar=*-*-* 05:00:00" >>  /etc/systemd/system/aidecheck.timer
+echo "Unit=aidecheck.service" >>  /etc/systemd/system/aidecheck.timer
+echo "" >>  /etc/systemd/system/aidecheck.timer
+echo "[Install]" >>  /etc/systemd/system/aidecheck.timer
+echo "WantedBy=multi-user.target" >>  /etc/systemd/system/aidecheck.timer
+
+chown root:root /etc/systemd/system/aidecheck.*
+chmod 0644 /etc/systemd/system/aidecheck.*
+systemctl daemon-reload
+systemctl enable aidecheck.service
+systemctl --now enable aidecheck.timer
+
+# 1.3
+apt upgrade
+# 1.3
+apt-cache policy
+apt-key list
+
+
+
+
+
+
