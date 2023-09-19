@@ -190,8 +190,6 @@ if [ $? -eq 0 ]; then {
 fi
 
 
-fi ##
-
 apt install apparmor apparmor-utils
 clear
 out=$(dpkg-query -W -f='${binary:Package}\t${Status}\t${db:Status-Status}\n'apparmor apparmor-utils)
@@ -204,12 +202,43 @@ else {
 }
 fi
 
-sed -i 's/GRUB_CMDLINE_LINUX=/GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor"/'
+sed -i 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor"/' /etc/default/grub
 
+cat /etc/default/grub | grep 'GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor"'
+if [ $? == 0 ]; then {
+	echo grub config updated
+	update-grub
+} else {
+	echo GRUB BAD config file not configed right apparmor
+	read
+}
 
+fi
 
+aa-enforce /etc/apparmor.d/*
+clear
+apparmor_status | grep profiles
+echo "NONE SHOULD BE IN COMPLAIN MODE"
+read
+clear
+apparmor_status | grep processes
+read
+clear
+# 1.7
 
+rm /etc/motd &&
+read
+clear
+echo "Authorized use only. All activity may be monitored and reported." >/etc/issue
+echo "Authorized use only. All activity may be monitored and reported." >/etc/issue.net
 
+chown root:root $(readlink -e /etc/issue)
+chmod u-x,go-wx $(readlink -e /etc/issue)
+chown root:root $(readlink -e /etc/issue.net)
+chmod u-x,go-wx $(readlink -e /etc/issue.net)
 
-
+apt purge gdm3
+#
+# 1.8 fud
+#
 
