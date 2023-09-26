@@ -31,7 +31,9 @@ sudo rm -f /etc/apt/sources.list
 echo -e $ubuntu_sources | sed "s/ deb/deb/g; s/CHANGEME/${CODENAME}/g" | sudo tee /etc/apt/sources.list > /dev/null
 
 sudo $APT install -y unattended-upgrades apt-listchanges
-    
+
+sudo $APT update
+
 # auto updates
 echo 'APT::Periodic::Update-Package-Lists "1";'             | sudo tee /etc/apt/apt.conf.d/10periodic > /dev/null
 echo 'APT::Periodic::Download-Upgradeable-Packages "1";'    | sudo tee -a /etc/apt/apt.conf.d/10periodic > /dev/null
@@ -42,6 +44,8 @@ echo 'APT::Periodic::Update-Package-Lists "1";'             | sudo tee /etc/apt/
 echo 'APT::Periodic::Download-Upgradeable-Packages "1";'    | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades > /dev/null
 echo 'APT::Periodic::Unattended-Upgrade "1";'               | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades > /dev/null
 echo 'APT::Periodic::AutocleanInterval "7";'                | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades > /dev/null
+
+sudo $APT update && sudo $APT upgrade -y
 
 }
 
@@ -68,12 +72,9 @@ main (){
   sudo apt install -y software-properties-common
   sudo add-apt-repository ppa:apt-fast/stable -y
 
-  
-  apt_fix
-  
   sudo apt-get update
   sudo DEBIAN_FRONTEND=noninteractive apt install -y apt-fast && APT=apt-fast
-
+  apt_fix
   
   
 
