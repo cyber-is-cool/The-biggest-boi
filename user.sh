@@ -5,7 +5,6 @@ USERS=$(grep -E "/bin/.*sh" /etc/passwd | grep -v -e root -e `whoami` -e speech-
 
 DISTRO=$(lsb_release -i | cut -d: -f2 | sed "s/\\t//g")
 CODENAME=$(lsb_release -c | cut -d: -f2 | sed "s/\\t//g")
-# -------------------- User functions -------------------- 
 delete_unauthorised_users () {
     # Files necessary: 
     #   * users.txt
@@ -49,6 +48,26 @@ add_new_users () {
         sudo useradd -m $REPLY
     done
 }
+
+sys_accounts() {
+
+l_output=""
+l_output2=""
+l_valid_shells="^($( awk -F\/ '$NF != "nologin" {print}' /etc/shells | sed -rn '/^\//{s,/,\\\\/,g;p}' | paste -s -d '|' - ))$"
+a_users=(); a_ulock=() # initialize arrays
+while read -r l_user; do # change system accounts that have a valid login shell to nolog shell
+echo -e " - System account \"$l_user\" has a valid logon shell, changing shell to \"$(which nologin)\""
+usermod -s "$(which nologin)" "$l_user"
+done < <(awk -v pat="$l_valid_shells" -F: '($1!~/(root|sync|shutdown|halt|^\+)/ && $3<'"$(awk '/^\s*UID_MIN/{print $2}' /etc/login.defs)"' && $(NF) ~ pat) { print $1 }' /etc/passwd)
+while read -r l_ulock; do # Lock system accounts that aren't locked
+echo -e " - System account \"$l_ulock\" is not locked, locking account"
+usermod -L "$l_ulock"
+done < <(awk -v pat="$l_valid_shells" -F: '($1!~/(root|^\+)/ && $2!~/LK?/ && $3<'"$(awk '/^\s*UID_MIN/{print $2}' /etc/login.defs)"' && $(NF) ~ pat) {print $1 }' /etc/passwd)
+
+}
+
+
+
 
 
 sudo apt install -y libpam-cracklib fail2ban
@@ -134,15 +153,13 @@ case $answer in
     do 
         password_hash=$(echo $line | cut -d: -f2)
         account=$(echo $line | cut -d: -f1)
-        if [[ -z $password_hash  ]]
+        if [[ -z $password_hash  ]];
         then 
             echo "{account}"
             read -rp $'Press <enter> to continue\n'
         fi
     done
 
-    echo "${GREEN}[*] Lightdm configs ${RESET}"
-    disable_guests
 
     # Order ran 
     # delete_unauthorised_users
@@ -159,6 +176,7 @@ case $answer in
     cp /etc/login.defs backup/pam/login.defs
 
     # Replace the arguments
+    
     sudo sed -ie "s/PASS_MAX_DAYS.*/PASS_MAX_DAYS\\t90/" /etc/login.defs
     sudo sed -ie "s/PASS_MIN_DAYS.*/PASS_MIN_DAYS\\t10/" /etc/login.defs
     sudo sed -ie "s/PASS_WARN_AGE.*/PASS_WARN_AGE\\t7/" /etc/login.defs
@@ -170,6 +188,12 @@ case $answer in
     sudo sed -ie "s/LOGIN_RETRIES.*/LOGIN_RETRIES\\t5/" /etc/login.defs
     sudo sed -ie "s/ENCRYPT_METHOD.*/ENCRYPT_METHOD\\tSHA512/" /etc/login.defs
     sudo sed -ie "s/LOGIN_TIMEOUT.*/LOGIN_TIMEOUT\\t60/" /etc/login.defs
+    useradd -D -f 30
+    sudo sed -ie "s/# difok.*/difok\\t60/" /etc/security/pwquality.conf
+    sudo sed -ie "s/difok.*/difok\\t60/" /etc/security/pwquality.conf
+    
+    sudo sed -ie "s/# dictcheck.*/dictcheck\\t1/" /etc/security/pwquality.conf
+    sudo sed -ie "s/dictcheck.*/dictcheck\\t1/" /etc/security/pwquality.conf    
     
     RANBEFORE=$(grep "pam_tally2.so" /etc/pam.d/common-auth)
     if [[ -z $RANBEFORE ]]
@@ -178,6 +202,11 @@ case $answer in
     fi
     
     sudo sed -i 's/nullok//g' /etc/pam.d/common-auth
+    
+    #secure system accounts
+    sys_accounts()
+    
+    
 
 
 
