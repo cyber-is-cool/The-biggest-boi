@@ -204,7 +204,11 @@ case $answer in
     sudo sed -i 's/nullok//g' /etc/pam.d/common-auth
     
     #secure system accounts
-    sys_accounts()
+    /bin/bash ################################# file name###########
+    # GUID ROOT 0
+    usermod -g 0 root
+
+    
     
     
 
