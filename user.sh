@@ -207,7 +207,7 @@ case $answer in
     /bin/bash ################################# file name###########
     # GUID ROOT 0
     usermod -g 0 root
-
+    passwd -l root
     
     
     
